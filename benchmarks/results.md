@@ -1,6 +1,6 @@
 # Measured PTXLens results
 
-Source commit: `3e98158ae5abb1da080b5201dcf56e783382948e`; date: 2026-10-20T08:15:15.532889+00:00
+Source commit: `73cae30f47e55da9554796cdfcff88a9ca07da2f`; date: 2026-10-20T09:03:47.837304+00:00
 Environment: Linux-6.17.0-1022-azure-x86_64-with-glibc2.39; AMD EPYC 7763 64-Core Processor; g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
 
 In-memory source -> tokenizer -> parser -> static analysis; one warmup, 15 steady_clock samples of 10 analyses; microseconds per analysis. Excludes disk reads and JSON serialization. Synthetic small=100 and large=5000 two-instruction repetitions plus ret.
@@ -10,16 +10,16 @@ Timing corpus: 10 files and 10305 instructions including two synthetic throughpu
 
 | Fixture | Instructions | Median µs | Min–max µs | Instructions/s |
 |---|---:|---:|---:|---:|
-| branches.ptx | 14 | 42.32 | 37.51–44.98 | 330819 |
-| formatting.ptx | 9 | 43.67 | 35.60–64.26 | 206083 |
-| matrix.ptx | 18 | 64.86 | 60.01–72.78 | 277537 |
-| memory.ptx | 10 | 40.82 | 37.58–62.02 | 244994 |
-| multiple.ptx | 7 | 37.86 | 37.14–45.24 | 184868 |
-| reduction.ptx | 25 | 77.48 | 74.02–84.83 | 322652 |
-| unknown.ptx | 2 | 10.18 | 10.09–13.27 | 196442 |
-| vector_add.ptx | 18 | 64.16 | 59.83–76.21 | 280531 |
-| synthetic_small.ptx | 201 | 334.13 | 323.77–395.42 | 601557 |
-| synthetic_large.ptx | 10001 | 17706.00 | 17284.40–20111.10 | 564838 |
+| branches.ptx | 14 | 75.96 | 67.36–245.51 | 184305 |
+| formatting.ptx | 9 | 67.94 | 36.48–78.07 | 132464 |
+| matrix.ptx | 18 | 111.16 | 97.23–121.57 | 161929 |
+| memory.ptx | 10 | 69.78 | 62.68–183.03 | 143298 |
+| multiple.ptx | 7 | 67.49 | 57.44–85.19 | 103722 |
+| reduction.ptx | 25 | 152.79 | 140.53–186.14 | 163627 |
+| unknown.ptx | 2 | 16.16 | 16.04–19.61 | 123730 |
+| vector_add.ptx | 18 | 120.56 | 106.05–128.22 | 149306 |
+| synthetic_small.ptx | 201 | 636.91 | 588.39–804.87 | 315586 |
+| synthetic_large.ptx | 10001 | 34864.20 | 32713.10–51270.10 | 286856 |
 
 Reproduce with `python3 benchmarks/benchmark.py build/ptxlens`. Raw samples and SHA-256 fixture digests are in results.json.
 
