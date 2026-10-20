@@ -42,7 +42,7 @@ Instruction indices are zero-based; ranges are half-open. JSON includes each ins
 - Eleven categories: arithmetic, logical, data movement, global/shared/local memory, control flow, synchronization, atomics, conversion, and other/unknown. Rule families are listed in `classes()` in `src/ptxlens.cpp`; unknown opcodes remain visible and count toward totals.
 - Counts by category/address space, declared register variables by type, register-reference occurrences, unique textual register references, predicated instructions, branches, basic blocks, and direct CFG edges.
 
-Register-reference counts include predicate uses, operands, and PTX special registers such as `%tid.x`. They exclude declarations. Names beginning with `%` are counted lexically; declared named registers without `%` are also recognized. Unique names are per function, so shadowed names share a textual identity. Counts are **not hardware register allocation**. `ld.param`, `ld.const`, and generic memory accesses use the data-movement category and retain their address space; atomics retain the atomic category and address space.
+Register-reference counts include predicate uses, operands, and PTX special registers such as `%tid.x`. They exclude declarations. Scalar register names match exactly; parameterized ranges match only their declared canonical decimal element names, including ranges of length one. JSON declarations retain `kind` (`scalar`, `storage_array`, or `register_range`). Explicit non-register storage names and out-of-range elements of declared ranges are excluded. Other names beginning with `%`, including special registers, retain the lexical fallback; undeclared names are not type-validated. Declared named registers without `%` are also recognized. Unique names are per function, so shadowed names share a textual identity. Counts are **not hardware register allocation**. `ld.param`, `ld.const`, and generic memory accesses use the data-movement category and retain their address space; atomics retain the atomic category and address space.
 
 Direct `bra` targets must resolve to labels within the function. Predicated branches/returns retain fallthrough edges. Indirect `brx` edges are explicitly unresolved; calls retain the intraprocedural continuation, without callee edges. CFGs are structural, without reachability pruning or predicate-value analysis.
 
@@ -58,6 +58,8 @@ Observations include global-memory-heavy static mixes, branch-heavy static mixes
 python3 tests/test.py build/ptxlens
 python3 benchmarks/benchmark.py build/ptxlens --smoke
 ```
+
+Benchmarks also execute the targeted gates. A separate `audit_regressions` CTest group checks twelve literal register-identity/count cases, including both audited global/register collisions, range boundaries, multiple prefixes, storage spaces, predicates, and `%` names.
 
 The hand-labeled opcode/category sequences in [fixtures/annotations.json](fixtures/annotations.json) were written from source fixtures, independently of analyzer output. The test compares full ordered sequences, not just totals. All labeled instructions (including returns and the intentionally unknown opcode) contribute once to the agreement denominator. Tests additionally check declarations, predicates, memory spaces, manually expected CFG edges, source lines, observations, malformed syntax, and a comment-insertion metamorphic transformation.
 

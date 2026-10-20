@@ -56,28 +56,45 @@ bool identifier(const std::string &s) {
            c == '$' || c == '%';
   });
 }
-bool is_register(const std::string &name, const Function &f) {
-  if (!name.empty() && name[0] == '%')
-    return true; // Includes PTX special registers; no hardware allocation
-                 // claim.
+bool is_register(const std::string &name, const Function &f,
+                 const std::vector<Declaration> &globals) {
+  bool declared_family = false;
+  auto matches = [&](const Declaration &d) {
+    if (d.kind != DeclarationKind::RegisterRange)
+      return name == d.name;
+    if (name == d.name)
+      declared_family = true; // A range prefix is not itself a register.
+    if (name.size() <= d.name.size() ||
+        name.compare(0, d.name.size(), d.name) != 0)
+      return false;
+    auto suffix = name.substr(d.name.size());
+    if (suffix.find_first_not_of("0123456789") != std::string::npos)
+      return false;
+    declared_family = true;
+    // Parameterized names use canonical decimal suffixes: r00 is not r0.
+    if (suffix.size() > 1 && suffix[0] == '0')
+      return false;
+    std::size_t index = 0;
+    auto r =
+        std::from_chars(suffix.data(), suffix.data() + suffix.size(), index);
+    return r.ec == std::errc{} && r.ptr == suffix.data() + suffix.size() &&
+           index < d.elements;
+  };
   for (const auto &d : f.declarations)
-    if (d.space == "reg") {
-      if (d.elements == 1 && name == d.name)
-        return true;
-      if (name.size() > d.name.size() &&
-          name.compare(0, d.name.size(), d.name) == 0) {
-        auto suffix = name.substr(d.name.size());
-        std::size_t index = 0;
-        auto r = std::from_chars(suffix.data(), suffix.data() + suffix.size(),
-                                 index);
-        if (r.ec == std::errc{} && r.ptr == suffix.data() + suffix.size() &&
-            index < d.elements)
-          return true;
-      }
-    }
-  return false;
+    if (d.space == "reg" && matches(d))
+      return true;
+  // Explicit storage declarations take precedence over the lexical % fallback.
+  for (const auto &d : f.declarations)
+    if (d.space != "reg" && name == d.name)
+      return false;
+  for (const auto &d : globals)
+    if (name == d.name)
+      return d.space == "reg" && d.kind != DeclarationKind::RegisterRange;
+  // Retain special registers and undeclared % names without type validation,
+  // but do not count invalid elements of explicitly declared register ranges.
+  return !declared_family && !name.empty() && name[0] == '%';
 }
-void analyze(Function &f) {
+void analyze(Function &f, const std::vector<Declaration> &globals) {
   for (const auto &c : category_names())
     f.categories[c] = 0;
   for (const auto &d : f.declarations)
@@ -105,7 +122,7 @@ void analyze(Function &f) {
       ++memory_count;
     }
     for (const auto &token : i.operands)
-      if (is_register(token.text, f)) {
+      if (is_register(token.text, f, globals)) {
         ++f.register_reference_occurrences;
         f.unique_register_references.insert(token.text);
       }
@@ -157,7 +174,7 @@ void analyze(Function &f) {
     }
     if (i.family == "mov" && i.operands.size() == 3 &&
         i.operands[1].text == "," && i.operands[0].text == i.operands[2].text &&
-        is_register(i.operands[0].text, f))
+        is_register(i.operands[0].text, f, globals))
       f.observations.push_back(
           {"self_move",
            "identical scalar source/destination " + i.operands[0].text,
@@ -315,6 +332,8 @@ class Parser {
       if (n < st.size() && (st[n].text == "<" || st[n].text == "[")) {
         const auto close = st[n].text == "<" ? ">" : "]";
         const bool registers = st[n].text == "<";
+        d.kind = registers ? DeclarationKind::RegisterRange
+                           : DeclarationKind::StorageArray;
         ++n;
         if (registers && space != "reg")
           throw std::runtime_error("register range outside .reg");
@@ -575,7 +594,6 @@ public:
           if (external)
             throw std::runtime_error("extern function cannot have body");
           body(f);
-          analyze(f);
         }
         module.functions.push_back(std::move(f));
         continue;
@@ -593,6 +611,9 @@ public:
       throw std::runtime_error("required PTX header directive missing");
     if (module.functions.empty())
       throw std::runtime_error("no entry points or functions");
+    for (auto &f : module.functions)
+      if (!f.external)
+        analyze(f, module.declarations);
     return module;
   }
 };
@@ -736,7 +757,11 @@ void declaration_json(std::ostream &o, const std::vector<Declaration> &ds) {
     const auto &d = ds[n];
     o << "{\"space\":" << quote(d.space) << ",\"type\":" << quote(d.type)
       << ",\"name\":" << quote(d.name) << ",\"elements\":" << d.elements
-      << ",\"line\":" << d.line << '}';
+      << ",\"line\":" << d.line << ",\"kind\":"
+      << quote(d.kind == DeclarationKind::RegisterRange  ? "register_range"
+               : d.kind == DeclarationKind::StorageArray ? "storage_array"
+                                                         : "scalar")
+      << '}';
   }
   o << ']';
 }

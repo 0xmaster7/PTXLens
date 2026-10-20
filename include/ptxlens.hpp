@@ -9,9 +9,11 @@ struct Token {
   std::string text;
   std::size_t line = 1;
 };
+enum class DeclarationKind { Scalar, StorageArray, RegisterRange };
 struct Declaration {
   std::string space, type, name;
   std::size_t elements = 1, line = 0;
+  DeclarationKind kind = DeclarationKind::Scalar;
 };
 struct Instruction {
   std::string opcode, family, category, predicate, memory_space, branch_target;

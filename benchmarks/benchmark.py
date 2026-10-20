@@ -2,11 +2,12 @@
 import argparse, datetime, hashlib, json, pathlib, platform, subprocess, sys, tempfile
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tests'))
 from test import validate, HEADER
+from remediation import validate as validate_regressions
 
 def output(*args):return subprocess.check_output(args,text=True,cwd=ROOT).strip()
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('binary');parser.add_argument('--smoke',action='store_true');a=parser.parse_args();binary=str(pathlib.Path(a.binary).resolve())
-    correctness=validate(binary,a.smoke);timing=[]
+    correctness=validate(binary,a.smoke);regressions=validate_regressions(binary);timing=[]
     paths=sorted((ROOT/'fixtures').glob('*.ptx'))
     with tempfile.TemporaryDirectory() as temp:
         for name,repetitions in [('synthetic_small',20 if a.smoke else 100),('synthetic_large',100 if a.smoke else 5000)]:
@@ -21,7 +22,7 @@ def main():
           'cpu':next(l.split(':',1)[1].strip() for l in pathlib.Path('/proc/cpuinfo').read_text().splitlines() if l.startswith('model name')),
           'compiler':output('g++','--version').splitlines()[0],'build':'CMake Release; GCC; -O3 -DNDEBUG',
           'method':'In-memory source -> tokenizer -> parser -> static analysis; one warmup, 15 steady_clock samples of 10 analyses; microseconds per analysis. Excludes disk reads and JSON serialization. Synthetic small=100 and large=5000 two-instruction repetitions plus ret.',
-          'correctness':correctness,'timing_files_analyzed':len(timing),'timing_instructions_total':sum(r['instructions'] for r in timing),'timings':timing,
+          'audit_regressions':regressions,'correctness':correctness,'timing_files_analyzed':len(timing),'timing_instructions_total':sum(r['instructions'] for r in timing),'timings':timing,
           'classification_denominator':'103 manually labeled instructions in committed fixtures; synthetic throughput inputs are excluded from classification agreement.',
           'limitations':['No CUDA compiler, ptxas, NVIDIA GPU, or GPU execution was available.','Fixtures follow official PTX ISA syntax; no claim of assembler validation, register allocation, occupancy, divergence, spilling, or GPU performance.','The intentionally unknown opcode fixture tests retention, not ISA validity.','Agreement is only against the committed hand-annotated corpus, not the complete PTX ISA.','Source commit identifies measured code; results are committed afterward.']}
     (ROOT/'benchmarks/results.json').write_text(json.dumps(data,indent=2)+'\n')
