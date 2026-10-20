@@ -1,0 +1,38 @@
+.version 8.0
+.target sm_70
+.address_size 64
+.visible .entry block_reduction(.param .u64 input, .param .u64 output) {
+    .reg .b32 %r<4>;
+    .reg .b64 %rd<4>;
+    .reg .f32 %f<2>;
+    .reg .pred %p;
+    .shared .align 4 .b8 scratch[4096];
+    ld.param.u64 %rd0, [input];
+    ld.param.u64 %rd1, [output];
+    mov.u32 %r0, %tid.x;
+    mul.wide.u32 %rd2, %r0, 4;
+    add.u64 %rd3, %rd0, %rd2;
+    ld.global.f32 %f0, [%rd3];
+    mov.u32 %r1, scratch;
+    mad.lo.u32 %r2, %r0, 4, %r1;
+    st.shared.f32 [%r2], %f0;
+    bar.sync 0;
+    mov.u32 %r3, 128;
+reduce:
+    setp.ge.u32 %p, %r0, %r3;
+    @%p bra skip;
+    mad.lo.u32 %r1, %r3, 4, %r2;
+    ld.shared.f32 %f1, [%r1];
+    add.f32 %f0, %f0, %f1;
+    st.shared.f32 [%r2], %f0;
+skip:
+    bar.sync 0;
+    shr.u32 %r3, %r3, 1;
+    setp.ne.u32 %p, %r3, 0;
+    @%p bra reduce;
+    setp.ne.u32 %p, %r0, 0;
+    @%p bra done;
+    st.global.f32 [%rd1], %f0;
+done:
+    ret;
+}

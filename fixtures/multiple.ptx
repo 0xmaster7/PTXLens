@@ -1,0 +1,13 @@
+.version 8.0
+.target sm_70
+.address_size 64
+.extern .func (.param .b32 result) external_fn(.param .b32 arg);
+.func (.param .b32 result) increment(.param .b32 arg) {
+    .reg .b32 value;
+    ld.param.b32 value, [arg];
+    add.u32 value, value, 1;
+    st.param.b32 [result], value;
+    ret;
+}
+.visible .entry first() { ret; }
+.visible .entry second() { .reg .b32 %r; mov.u32 %r, %tid.x; ret; }

@@ -1,0 +1,20 @@
+.version 8.0
+.target sm_70
+.address_size 64
+.global .align 4 .u32 counter;
+.visible .entry memory() {
+    .reg .b32 %r<3>;
+    .reg .b64 %rd<2>;
+    .shared .align 4 .u32 shared_word;
+    .local .align 4 .u32 local_word;
+    mov.u32 %r0, 1;
+    st.shared.u32 [shared_word], %r0;
+    bar.sync 0;
+    ld.shared.u32 %r1, [shared_word];
+    st.local.u32 [local_word], %r1;
+    ld.local.u32 %r2, [local_word];
+    cvta.global.u64 %rd0, counter;
+    atom.global.add.u32 %r0, [%rd0], %r2;
+    membar.gl;
+    ret;
+}

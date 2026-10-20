@@ -1,0 +1,17 @@
+name: verify
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - sanitizers: "OFF"
+            build_type: Release
+          - sanitizers: "ON"
+            build_type: Debug
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_SANITIZERS=${{ matrix.sanitizers }}
+      - run: cmake --build build -j2
+      - run: ctest --test-dir build --output-on-failure

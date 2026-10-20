@@ -1,0 +1,68 @@
+{
+  "method": "Hand-labeled opcode/category sequences from PTX source, independent of analyzer output. Unknown fixture tests retention and is not claimed to assemble. All entries, including unknown opcodes and returns, contribute once to the denominator.",
+  "files": {
+    "vector_add.ptx": {
+      "vector_add": [
+        ["ld.param.u64", "data_movement"], ["ld.param.u64", "data_movement"], ["ld.param.u64", "data_movement"],
+        ["mov.u32", "data_movement"], ["mov.u32", "data_movement"], ["mov.u32", "data_movement"],
+        ["mad.lo.s32", "arithmetic"], ["setp.ge.u32", "logical"], ["bra", "control_flow"],
+        ["mul.wide.u32", "arithmetic"], ["add.u64", "arithmetic"], ["add.u64", "arithmetic"], ["add.u64", "arithmetic"],
+        ["ld.global.f32", "global_memory"], ["ld.global.f32", "global_memory"], ["add.f32", "arithmetic"],
+        ["st.global.f32", "global_memory"], ["ret", "control_flow"]
+      ]
+    },
+    "reduction.ptx": {
+      "block_reduction": [
+        ["ld.param.u64", "data_movement"], ["ld.param.u64", "data_movement"], ["mov.u32", "data_movement"],
+        ["mul.wide.u32", "arithmetic"], ["add.u64", "arithmetic"], ["ld.global.f32", "global_memory"],
+        ["mov.u32", "data_movement"], ["mad.lo.u32", "arithmetic"], ["st.shared.f32", "shared_memory"],
+        ["bar.sync", "synchronization"], ["mov.u32", "data_movement"], ["setp.ge.u32", "logical"],
+        ["bra", "control_flow"], ["mad.lo.u32", "arithmetic"], ["ld.shared.f32", "shared_memory"],
+        ["add.f32", "arithmetic"], ["st.shared.f32", "shared_memory"], ["bar.sync", "synchronization"],
+        ["shr.u32", "logical"], ["setp.ne.u32", "logical"], ["bra", "control_flow"], ["setp.ne.u32", "logical"],
+        ["bra", "control_flow"], ["st.global.f32", "global_memory"], ["ret", "control_flow"]
+      ]
+    },
+    "matrix.ptx": {
+      "dot4": [
+        ["ld.param.u64", "data_movement"], ["ld.param.u64", "data_movement"], ["ld.param.u64", "data_movement"],
+        ["mov.f32", "data_movement"], ["ld.global.f32", "global_memory"], ["ld.global.f32", "global_memory"],
+        ["fma.rn.f32", "arithmetic"], ["ld.global.f32", "global_memory"], ["ld.global.f32", "global_memory"],
+        ["fma.rn.f32", "arithmetic"], ["ld.global.f32", "global_memory"], ["ld.global.f32", "global_memory"],
+        ["fma.rn.f32", "arithmetic"], ["ld.global.f32", "global_memory"], ["ld.global.f32", "global_memory"],
+        ["fma.rn.f32", "arithmetic"], ["st.global.f32", "global_memory"], ["ret", "control_flow"]
+      ]
+    },
+    "branches.ptx": {
+      "branches": [
+        ["ld.param.u64", "data_movement"], ["mov.u32", "data_movement"], ["setp.eq.u32", "logical"], ["bra", "control_flow"],
+        ["and.b32", "logical"], ["setp.eq.u32", "logical"], ["bra", "control_flow"], ["mov.u32", "data_movement"],
+        ["bra.uni", "control_flow"], ["mov.u32", "data_movement"], ["bra", "control_flow"], ["mov.u32", "data_movement"],
+        ["st.global.u32", "global_memory"], ["ret", "control_flow"]
+      ]
+    },
+    "memory.ptx": {
+      "memory": [
+        ["mov.u32", "data_movement"], ["st.shared.u32", "shared_memory"], ["bar.sync", "synchronization"],
+        ["ld.shared.u32", "shared_memory"], ["st.local.u32", "local_memory"], ["ld.local.u32", "local_memory"],
+        ["cvta.global.u64", "conversion"], ["atom.global.add.u32", "atomics"], ["membar.gl", "synchronization"], ["ret", "control_flow"]
+      ]
+    },
+    "formatting.ptx": {
+      "unusual": [
+        ["ld.param.u64", "data_movement"], ["mov.u32", "data_movement"], ["mov.u32", "data_movement"],
+        ["ld.global.u32", "global_memory"], ["ld.global.u32", "global_memory"], ["setp.ne.u32", "logical"],
+        ["mov.u32", "data_movement"], ["st.global.u32", "global_memory"], ["ret", "control_flow"]
+      ]
+    },
+    "multiple.ptx": {
+      "external_fn": [],
+      "increment": [["ld.param.b32", "data_movement"], ["add.u32", "arithmetic"], ["st.param.b32", "data_movement"], ["ret", "control_flow"]],
+      "first": [["ret", "control_flow"]],
+      "second": [["mov.u32", "data_movement"], ["ret", "control_flow"]]
+    },
+    "unknown.ptx": {
+      "future_opcode": [["futureop.experimental.b32", "other_unknown"], ["ret", "control_flow"]]
+    }
+  }
+}
